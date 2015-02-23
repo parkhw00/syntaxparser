@@ -1,0 +1,41 @@
+
+__predefined
+{
+	picture_start_code	= __const, __bit_length (32), 0x100;
+	slice_start_code	= __const, __bit_length (32), 0x101 through 0x1af;
+	reserved_B0		= __const, __bit_length (32), 0x1b0;
+	reserved_B1		= __const, __bit_length (32), 0x1b1;
+	user_data_start_code	= __const, __bit_length (32), 0x1b2;
+	sequence_header_code	= __const, __bit_length (32), 0x1b3;
+	sequence_error_code	= __const, __bit_length (32), 0x1b4;
+	extension_start_code	= __const, __bit_length (32), 0x1b5;
+	reserved_B6		= __const, __bit_length (32), 0x1b6;
+	sequence_end_code	= __const, __bit_length (32), 0x1b7;
+	group_start_code	= __const, __bit_length (32), 0x1b8;
+	system_start_codes	= __const, __bit_length (32), 0x1b9 through 0x1ff;
+
+	next_start_code		= __no_print;
+	bytealigned		= __no_print;
+	nextbits		= __no_print;
+	slice			= __no_print;
+	/*picture_data		= __no_print;*/
+
+	f_code			= __array_data_type_byte, __array_size (2, 2);
+
+	vertical_size		= 0/*__vertical_size ()*/;
+}
+
+__vertical_size ()
+{
+	if (__stream_defined ("sequence_extension"))
+		return (sequence_header.vertical_size_value +
+			(sequence_extension.vertical_size_extension*1024*4))
+	else
+		return (sequence_header.vertical_size_value)
+}
+
+start_parser()
+{
+	video_sequence ()
+}
+

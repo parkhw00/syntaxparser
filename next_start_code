@@ -1,0 +1,6 @@
+tart_code() {
+	while ( !bytealigned() )
+		zero_bit 1 ‘0’
+			while ( nextbits() != ‘0000 0000 0000 0000 0000 0001’ )
+				zero_byte 8 ‘0000 0000’
+}

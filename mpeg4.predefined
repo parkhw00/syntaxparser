@@ -1,0 +1,29 @@
+
+__predefined
+{
+	video_object_start_code			= 0x100 through 0x11f;
+	video_object_layer_start_code		= 0x120 through 0x12f;
+	visual_object_sequence_start_code	= 0x1b0;
+	visual_object_sequence_end_code		= 0x1b1;
+	user_data_start_code			= 0x1b2;
+	group_of_vop_start_code			= 0x1b3;
+	video_session_error_code		= 0x1b4;
+	visual_object_start_code		= 0x1b5;
+	vop_start_code				= 0x1b6;
+	fba_object_start_code			= 0x1ba;
+	fba_object_plane_start_code		= 0x1bb;
+	mesh_object_start_code			= 0x1bc;
+	mesh_object_plane_start_code		= 0x1bd;
+	still_texture_object_start_code		= 0x1be;
+	texture_spatial_layer_start_code	= 0x1bf;
+	texture_snr_layer_start_code		= 0x1c0;
+	texture_tile_start_code			= 0x1c1;
+	texture_shape_layer_start_code		= 0x1c2;
+	stuffing_start_code			= 0x1c3;
+}
+
+start_parser()
+{
+	VisualObjectSequence()
+}
+
