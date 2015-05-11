@@ -99,7 +99,10 @@ BEGIN {
 			sub ("))))", ")))");
 		}
 		if (function_name == "StillTextureObject")
+		{
 			sub ("visual_object_verid != 0001", "visual_object_verid != \"0001\"");
+			sub ("tiling jump_table_enable", "tiling_jump_table_enable");
+		}
 		if (function_name == "shape_object_decoding")
 			sub ("visual_object_verid != 0001", "visual_object_verid != \"0001\"");
 
@@ -110,6 +113,7 @@ BEGIN {
 		gsub("“", "\"");
 		gsub("”", "\"");
 		gsub("'", "\"");
+		gsub("–", "-");
 
 		line=$0;
 

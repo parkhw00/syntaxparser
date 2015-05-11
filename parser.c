@@ -6,6 +6,7 @@
 #include <string.h>
 #include <errno.h>
 #include <stdarg.h>
+#include <getopt.h>
 
 #include <glib.h>
 #include <glib/gprintf.h>
@@ -524,11 +525,11 @@ const char *dot_list (struct element *e)
 			if (now->next != e)
 			{
 #ifdef VERTICAL_LIST
-				t = g_strdup_printf ("%selement_%p -> element_%p [dir=back]\n",
+				t = g_strdup_printf ("%selement_%p -> element_%p [dir=back];\n",
 						sub?sub:"",
 						now->next, now);
 #else
-				t = g_strdup_printf ("%selement_%p -> element_%p\n",
+				t = g_strdup_printf ("%selement_%p -> element_%p;\n",
 						sub?sub:"",
 						now, now->next);
 #endif
@@ -541,10 +542,10 @@ const char *dot_list (struct element *e)
 		while (now != e);
 
 		t = g_strdup_printf ("subgraph cluster_%p {\n"
-				"label=\"listing\"\n"
+				"label=\"listing\";\n"
 				"subgraph subgraph_%p {\n"
 #ifdef VERTICAL_LIST
-				"rank=same\n"
+				"rank=same;\n"
 #endif
 				"%s\n"
 				"}\n"
@@ -660,7 +661,7 @@ const char *dot (struct element *e)
 		break;
 	}
 
-	ret = g_strdup_printf ("element_%p [label=\"%s%s%s\"]\n",
+	ret = g_strdup_printf ("element_%p [label=\"%s%s%s\"];\n",
 			e, element_type_name[e->type],
 			*label!=0?": ": "",
 			label);
@@ -670,7 +671,7 @@ const char *dot (struct element *e)
 		const char *t, *d;
 
 		d = dot_list (es[a]);
-		t = g_strdup_printf ("%selement_%p -> element_%p\n%s",
+		t = g_strdup_printf ("%selement_%p -> element_%p;\n%s",
 				ret, e, es[a], d);
 		if (ret)
 			g_free ((void*)ret);
@@ -695,7 +696,43 @@ void yyerror (char const *s)
 
 int flex_debug;
 
-int dot_defs (struct element *e)
+static int list_functions (struct element *e)
+{
+	struct element *now;
+
+	now = e;
+	do
+	{
+		const char *name;
+
+		if (now->type == element_type_functiondef)
+		{
+			struct symbol *s;
+
+			s = now->data[0];
+
+			name = s->str;
+		}
+		else if (now->type == element_type_predefined)
+		{
+			name = element_type_name[now->type];
+		}
+		else
+		{
+			error_element (now, "unknown defs\n");
+			return -1;
+		}
+
+		printf ("%s\n", name);
+
+		now = now->next;
+	}
+	while (now != e);
+
+	return 0;
+}
+
+static int dot_defs (struct element *e, const char *function)
 {
 	struct element *now;
 
@@ -724,10 +761,15 @@ int dot_defs (struct element *e)
 			return -1;
 		}
 
-		printf ("digraph %s {\n"
-				"graph [rankdir=\"LR\",size=\"11,8\",rotate=90,center=1]\n"
-				"%s}\n",
-				name, str);
+		if (!function ||
+				!strcmp(function, name))
+		{
+			printf ("digraph %s {\n"
+					"graph [rankdir=\"LR\",size=\"11,8\",rotate=90,center=1];\n"
+					"%s}\n",
+					name, str);
+		}
+
 		g_free ((void*)str);
 
 		now = now->next;
@@ -2420,37 +2462,58 @@ int main (int argc, char **argv)
 {
 	int ret;
 	int opt;
-	int do_dot, do_desc;
+	char *do_dot;
+	int do_desc;
+	int do_list_functions;
 	char *initial_function = "start_parser";
 	char *input_filename;
 
 	filename = NULL;
-	do_desc = do_dot = 0;
-	while ((opt = getopt (argc, argv, "-dDs:le:n:f:")) != -1)
+	do_dot = NULL;
+	do_desc = 0;
+	do_list_functions = 0;
+	while (1)
 	{
+		int option_index = 0;
+		const struct option longopts[] =
+		{
+			{"list-functions",	no_argument,	&do_list_functions,	1 },
+			{0,		0,	0,	0 }
+		};
+
+		opt = getopt_long (argc, argv, "-d:Ds:le:n:f:",
+				longopts, &option_index);
+		if (opt == -1)
+			break;
+
 		switch (opt)
 		{
 		default:
 		case '?':
-			printf (
-			"iso13818-2 stream parser\n"
-			"  # ./mpeg2 <arguments> ... <ES syntax file>\n"
-			"arguments:\n"
-			" -d                   : print graph for dot\n"
-			" -l                   : increase debug level\n"
-			" -s <input stream>    : input element stream\n"
-			" -n <file index>      : starting file index when input stream has %%d.\n"
-			" -e <number of error> : errors to allowed. stop parsing after the errors.\n"
-			" -f <function name>   : initial function name to parse\n"
-			       );
+printf (
+"iso13818-2 stream parser\n"
+"  # ./mpeg2 <arguments> ... <ES syntax file>\n"
+"arguments:\n"
+" -d <function name>   : print dot graph for a function\n"
+" -D                   : print syntax description\n"
+" -l                   : increase debug level\n"
+" -s <input stream>    : input element stream\n"
+" -n <file index>      : starting file index when input stream has %%d.\n"
+" -e <number of error> : errors to allowed. stop parsing after the errors.\n"
+" -f <function name>   : initial function name to parse\n"
+" --list-functions     : list known functions\n"
+);
 			return 1;
+
+		case 0:
+			break;
 
 		case 1:
 			filename = optarg;
 			break;
 
 		case 'd':
-			do_dot = 1;
+			do_dot = optarg;
 			break;
 
 		case 'D':
@@ -2517,9 +2580,15 @@ int main (int argc, char **argv)
 		return 1;
 	}
 
+	if (do_list_functions)
+	{
+		list_functions (root_element);
+		return 0;
+	}
+
 	if (do_dot)
 	{
-		dot_defs (root_element);
+		dot_defs (root_element, do_dot);
 		return 0;
 	}
 

@@ -9,9 +9,9 @@ CFLAGS += `pkg-config --cflags glib-2.0`
 LDFLAGS += `pkg-config --libs glib-2.0` -lm
 
 .SECONDARY:
-#.DELETE_ON_ERROR:
+.DELETE_ON_ERROR:
 
-all: mpeg2 mpeg4 h264
+all: mpeg2 h264 #mpeg4
 
 clean:
 	rm -f $(apps) $(objs) $(objs:.o=.d)
@@ -55,8 +55,10 @@ mpeg2.txt: is138182.pdf
 	pdftotext -raw $< $@
 
 mpeg2_dot.pdf: parser mpeg2.syntax
-	./parser -d mpeg2.syntax > $@.tmp.dot
-	dot -Tps $@.tmp.dot > $@.tmp.ps
+	rm -f $@.tmp.ps
+	for f in `./parser --list-functions mpeg2.syntax`; do \
+		./parser -d $$f mpeg2.syntax | dot -Tps >> $@.tmp.ps; \
+	done
 	ps2pdf -sPAPERSIZE=a4 $@.tmp.ps $@
 
 mpeg2_desc.txt: parser mpeg2.syntax
