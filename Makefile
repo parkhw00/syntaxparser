@@ -20,6 +20,7 @@ clean:
 		rm -f $$a.funcs $$a.syntax $$a.txt $${a}_desc.txt; \
 		rm -f $${a}_dot.pdf $${a}_dot.pdf.tmp.ps $${a}_dot.pdf.tmp.dot; \
 		rm -f $${a}_desc.txt; \
+		rm -f $${a}_sample*; \
 	done;
 
 parser: $(objs)
@@ -81,7 +82,7 @@ mpeg4_desc.txt: parser mpeg4.syntax
 
 
 
-h264: h264_desc.txt
+h264: h264_desc.txt h264_sample
 
 h264_desc.txt: parser h264.syntax
 	./parser -D h264.syntax > $@
@@ -95,6 +96,9 @@ h264.syntax: h264.funcs h264.predefined
 
 h264.txt: h.264_standard_document.pdf
 	pdftotext -layout $< $@
+
+h264_sample: parser h264.syntax
+	./parser -f start_parser -s sample_h264.es h264.syntax > $@
 
 
 
